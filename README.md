@@ -55,7 +55,11 @@ Metrics per case:
 
 A case passes when all applicable metrics are `True`. The runner exits non-zero on any failure, so it can drop into CI later.
 
-Current state: 6/6 cases pass (3 archetype scenarios, the photo-enhance conditional, a budget-constrained edge case, and an empty-quiz default).
+### Negative-check cases
+
+An `EvalCase` can set `negative_check=True`. The runner then inverts the pass condition: the case passes only if at least one metric *fails*. This proves the suite actually detects wrong expectations rather than rubber-stamping every run. One such case is included as a sanity check.
+
+Current state: 7/7 cases pass (3 archetype scenarios, the photo-enhance conditional, a budget-constrained edge case, an empty-quiz default, and one negative-check case demonstrating mismatch detection).
 
 To add a case, append an `EvalCase` to `evals/cases.py`. To add a metric, extend `_score_case` in `evals/runner.py`.
 

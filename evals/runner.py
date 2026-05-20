@@ -28,6 +28,7 @@ class CaseResult(BaseModel):
     metrics: dict[str, bool]
     failures: list[str] = Field(default_factory=list)
     outfit_count: int = 0
+    is_negative: bool = False
 
 
 class EvalReport(BaseModel):
@@ -124,13 +125,17 @@ def _score_case(case: EvalCase, result: dict[str, Any]) -> CaseResult:
         if not ok_div:
             failures.append("duplicate brand signature in final outfits")
 
-    passed = all(metrics.values())
+    metrics_all_ok = all(metrics.values())
+    # A negative-check case passes when at least one metric fails: that proves
+    # the suite actually catches the issue rather than rubber-stamping.
+    passed = (not metrics_all_ok) if case.negative_check else metrics_all_ok
     return CaseResult(
         case_name=case.name,
         passed=passed,
         metrics=metrics,
         failures=failures,
         outfit_count=len(final),
+        is_negative=case.negative_check,
     )
 
 
@@ -153,10 +158,12 @@ def print_report(report: EvalReport) -> None:
     print("-" * 76)
     for r in report.results:
         status = "PASS" if r.passed else "FAIL"
-        print(f"[{status}] {r.case_name}  ({r.outfit_count} outfits)")
+        tag = " (negative)" if r.is_negative else ""
+        print(f"[{status}]{tag} {r.case_name}  ({r.outfit_count} outfits)")
         for metric, value in r.metrics.items():
             mark = "ok" if value else "fail"
             print(f"        - {metric}: {mark}")
         for f in r.failures:
-            print(f"        ! {f}")
+            note = " (expected, negative-check)" if r.is_negative else ""
+            print(f"        ! {f}{note}")
     print()
