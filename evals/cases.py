@@ -25,6 +25,13 @@ class EvalCase(BaseModel):
         default=None,
         description="If set, every item in every returned outfit must be at or below this price.",
     )
+    negative_check: bool = Field(
+        default=False,
+        description=(
+            "If True, the case passes when at least one metric FAILS. Used to prove "
+            "the suite actually detects wrong expectations, not just rubber-stamps."
+        ),
+    )
 
 
 CASES: list[EvalCase] = [
@@ -121,5 +128,24 @@ CASES: list[EvalCase] = [
         quiz=QuizAnswers(gender=Gender.UNISEX, budget_max=300.0),
         expected_dominant=Archetype.CASUAL,
         min_outfits=1,
+    ),
+    EvalCase(
+        name="negative__sporty_input_with_formal_expectation",
+        description=(
+            "Negative-check case. The quiz signals sport occasions and sporty style "
+            "selections, so the graph correctly derives a sporty-dominant archetype. "
+            "The case deliberately expects FORMAL, so archetype_dominant_ok must fail. "
+            "negative_check=True inverts the pass condition, so this case passes "
+            "*because* the metric correctly flagged the mismatch."
+        ),
+        quiz=QuizAnswers(
+            gender=Gender.UNISEX,
+            budget_max=300.0,
+            occasions=["sport"],
+            style_selections=["sporty"],
+        ),
+        expected_dominant=Archetype.FORMAL,
+        min_outfits=1,
+        negative_check=True,
     ),
 ]
